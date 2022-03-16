@@ -1,10 +1,10 @@
-name:                demo-io
+name:                tetris
 version:             0.1.0.0
-github:              "githubuser/demo-io"
+github:              "ValeryStupenkov/Tetris"
 license:             BSD3
-author:              "Author name here"
+author:              "Valery Stupenkov"
 maintainer:          "example@example.com"
-copyright:           "2021 Author name here"
+copyright:           "2022 Stupenkov Valery"
 
 extra-source-files:
 - README.md
@@ -16,7 +16,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/demo-io#readme>
+description:         Please see the README on GitHub at <https://github.com/ValeryStupenkov/Tetris/blob/main/README.md>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -35,7 +35,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - demo-io
+    - tetris
 
 tests:
   demo-io-test:
