@@ -129,7 +129,7 @@ runGAme = do
        backColor 
        fps 
        game 
-       (drawPicture cfg)  
+       (drawApp cfg)  
        handlerEvent 
        updateApp
 
