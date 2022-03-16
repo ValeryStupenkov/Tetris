@@ -18,9 +18,10 @@ data FigureType = I | J | L | O | S | T | Z
 
 -- Rotation of figure
 data Rotation = D1 | D2 | D3 | D4
+  deriving Show
 
 -- Figures with rotation
-data Figure = Figure FigureType Rotation [BLock]
+data Figure = Figure FigureType Rotation [Block]
   deriving Show
 
 -- Size of Grid
@@ -31,6 +32,9 @@ type GridPosition = (Int, Int)
 
 -- Size of the window
 type WindowSize = (Int, Int)
+
+-- Position of the window
+type WindowPosition = (Int, Int)
 
 -- Size of the game in the window
 type GameSize = (Float, Float)
@@ -53,16 +57,16 @@ data AppState = AppState
   , width :: Int
   , height :: Int
   , nextFigures :: [Figure]
-  , grid :: Grid
   , score :: Integer
   , gameOver :: Bool
   }
 
 -- Default state of the game
-defaultAppState :: AppState
+-- defaultAppState :: AppState
 
 
-initialState :: AppState
+
+-- initialState :: AppState
 
 
 backColor :: Color
@@ -71,7 +75,8 @@ backColor = black
 fps :: Int
 fps = 60
 
-display :: AppState -> Display
+display :: Display
+display = FullScreen
 
 
 -----------------------
@@ -79,12 +84,16 @@ display :: AppState -> Display
 -----------------------
 
 drawApp :: AppState -> Picture
+drawApp _ = Blank
 
 drawGrid :: AppState -> Picture
+drawGrid _ = Blank
 
-drawEmptyGrid :: Appstate -> Picture
+drawEmptyGrid :: AppState -> Picture
+drawEmptyGrid _ = Blank
 
 drawFigure :: Figure -> Color -> GridPosition -> Picture
+drawFigure _ _ _ = Blank
 
 
 -----------------------
@@ -93,15 +102,19 @@ drawFigure :: Figure -> Color -> GridPosition -> Picture
 
 -- Move figure right if possible
 moveFigureLeft :: AppState -> AppState
+moveFigureLeft x = x
 
 -- Move figure left if possible
 moveFigureRight :: AppState -> AppState
+moveFigureRight x = x
 
 -- Move figure down if possible
 moveFigureDown :: AppState -> AppState 
+moveFigureDown x = x
 
 -- Rotate figure
 rotateFigure :: AppState -> AppState
+rotateFigure x = x
 
 -----------------------
 -- Handler and update functions
@@ -109,10 +122,11 @@ rotateFigure :: AppState -> AppState
 
 -- Handle Events
 handlerEvent :: Event -> AppState -> AppState
+handlerEvent _ state = state
 
 -- Updates game state by moving current figure down
-updateApp :: Float -> AppState -> Appstate
-
+updateApp :: Float -> AppState -> AppState
+updateApp _ state = state
 
 
 
@@ -122,10 +136,10 @@ updateApp :: Float -> AppState -> Appstate
 
 -- Run game
 runGame :: IO ()
-runGAme = do
-  let cfg = defaultAppConfig
+runGame = do
+  let cfg = defaultAppState
   game <- cfg
-  play (display cfg) 
+  play display
        backColor 
        fps 
        game 
