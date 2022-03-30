@@ -5,6 +5,7 @@ import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 import Data.Maybe
 
+
 ---------------------
 -- Data types
 ---------------------
@@ -340,7 +341,9 @@ countFilledRows (Well x) = (newWell, count)
 -- This fuction calls for updateGame and changes time
 updateApp :: Float -> AppState -> AppState
 -- updateApp t state = updateGame (state {time = (time state + t), deltaTime = t})
-updateApp t state = updateGame (state { deltaTime = t})
+updateApp t state 
+  | isPause state = state
+  | otherwise = updateGame (state { deltaTime = t})
 
 -- I decided that it's easier to use some helping function
 -- Moves figure down over time
