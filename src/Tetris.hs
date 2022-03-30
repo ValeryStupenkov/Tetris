@@ -61,7 +61,6 @@ emptyWell = Well (replicate 22 emptyRow)
 data AppState = AppState
   { 
     well :: Well
-  , time :: Float
   , deltaTime :: Float
   , timeToMove :: Float
   , figure :: Figure
@@ -78,7 +77,6 @@ defaultAppState :: AppState
 defaultAppState = AppState
   {
     well = emptyWell
-  , time = 0
   , deltaTime = 0
   , timeToMove = 0
   , figure = figureO
@@ -138,12 +136,12 @@ cellColor (FilledWith col) = col
 cellColor _ = black
 
 -- Concantenate each row with its number
-numberOfRows :: Well -> [(Int, Row)]
-numberOfRows (Well x) = zip [1,-1..(-41)] x
+numberedRows :: Well -> [(Int, Row)]
+numberedRows (Well x) = zip [1,-1..(-41)] x
 
 -- Concantenate each cell in a row with its number
-numberOfCells :: Row -> [(Int, Cell)]
-numberOfCells (Row x) = zip [-9,-7..9] x 
+numberedCells :: Row -> [(Int, Cell)]
+numberedCells (Row x) = zip [-9,-7..9] x 
 
 -- Returns color of the figure
 figureColor :: Figure -> Color
@@ -156,7 +154,7 @@ figureContain c (Figure x _) = elem c x
 -- Finally, draw functions themselves
 -- Drawing fuction for play 
 drawApp :: AppState -> Picture
-drawApp state = pictures [walls, field, currentFigure, drawScore ]
+drawApp state = pictures [walls, field, currentFigure, drawScore]
   where 
     walls = color wallColor (rectangleSolid (fromIntegral wallWidth) (fromIntegral wallHeight))
     field = pictures [ color wellColor (rectangleSolid (fromIntegral wellWidth) (fromIntegral wellHeight)), drawWell (well state)]
@@ -176,36 +174,36 @@ drawWell well = pictures (map pictureCell (cellPos well))
 
 -- Returns list of coordinates of the cells
 cellPos :: Well -> [(Int, Int, Cell)]
-cellPos well = concat (map takeCells (numberOfRows well))
+cellPos well = concat (map takeCells (numberedRows well))
   where 
-    takeCells (y, cs) = map extractCell (numberOfCells cs)
+    takeCells (y, cs) = map extractCell (numberedCells cs)
       where 
         extractCell (x, c) = (x, y, c)
 
 -- Draws a single cell
 drawCell :: (Int, Int) -> Color -> Picture
-drawCell (x,y) c = translate (fromIntegral sx) (fromIntegral sy) (color c (rectangleSolid sz sz))
+drawCell (x,y) c = translate (fromIntegral tx) (fromIntegral ty) (color c (rectangleSolid sz sz))
   where
-    sx = fst transformed
-    sy = snd transformed
+    tx = fst transformed
+    ty = snd transformed
     sz = 0.9 * (fromIntegral cellSize)
     transformed = transformCoords (x, y)
 
 -- Transform coordinates from playfield to screen coordinates
 transformCoords :: (Int,Int) -> (Int, Int)
-transformCoords (x,y) = (sx,sy) 
+transformCoords (x,y) = (tx,ty) 
   where
-    sx = quot (x * cellSize) 2
-    sy = (11 * cellSize) + quot (y * cellSize) 2
+    tx = quot (x * cellSize) 2
+    ty = (11 * cellSize) + quot (y * cellSize) 2
 
 -- It's not drawing exactly, fuction just changes color of the cells in the well if a figure is in position
 -- drawWell later will draw all cells in the right color 
 drawFigure :: Figure -> (Int,Int) -> Well -> Well
 drawFigure figure (x, y) well 
   | (odd x) || (odd y) = error "Incorrect: piece coordinates must be even"  
-  | otherwise = Well (map drawRow (numberOfRows well))
+  | otherwise = Well (map drawRow (numberedRows well))
     where
-      drawRow (py, row) = Row (map drawcell (numberOfCells row))
+      drawRow (py, row) = Row (map drawcell (numberedCells row))
         where drawcell (px, c) 
                              | c /= Empty = c
                              | figureContain (px - x, py - y) figure = FilledWith (figureColor figure)
@@ -282,10 +280,10 @@ okPos (x, y) (Figure cs _) = and (map okCoord cs)
 
 -- Check if figure collides with other figures
 figureCollision :: Figure -> (Int, Int) -> Well -> Bool 
-figureCollision figure figurePos well = wellsCollide draw well
+figureCollision figure figurePos well = wellCollide draw well
   where 
     draw = drawFigure figure figurePos emptyWell
-    wellsCollide (Well w1) (Well w2) = or (map rowCollide (zip w1 w2))
+    wellCollide (Well w1) (Well w2) = or (map rowCollide (zip w1 w2))
     rowCollide ((Row r1), (Row r2)) = or (map cellCollide (zip r1 r2))
     cellCollide (a,b) = (a /= Empty) && (b /= Empty)
 
@@ -341,7 +339,8 @@ countFilledRows (Well x) = (newWell, count)
 -- Updates game state by moving current figure down
 -- This fuction calls for updateGame and changes time
 updateApp :: Float -> AppState -> AppState
-updateApp t state = updateGame (state {time = (time state + t), deltaTime = t})
+-- updateApp t state = updateGame (state {time = (time state + t), deltaTime = t})
+updateApp t state = updateGame (state { deltaTime = t})
 
 -- I decided that it's easier to use some helping function
 -- Moves figure down over time
@@ -352,7 +351,7 @@ updateGame state
     where 
       newstate = state {timeToMove = (timeToMove state) - (deltaTime state)}
 
-
+-- This one changes speed of falling figure based on pressedDown value 
 updateSpeed :: AppState -> Float
 updateSpeed state
   | pressedDown state = 1.0 / 20
@@ -377,6 +376,7 @@ screenHeight = 768
 
 display :: Display
 display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
+--display = FullScreen
 
 -- Run game
 runGame :: IO ()
