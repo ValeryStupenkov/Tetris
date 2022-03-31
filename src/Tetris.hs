@@ -3,7 +3,6 @@ module Tetris where
 
 import Graphics.Gloss.Interface.Pure.Game
 import System.Random
-import Data.Maybe
 
 
 ---------------------
@@ -15,12 +14,19 @@ data Figure = Figure [(Int,Int)] Color
   deriving (Show)
 
 -- Figures 
+figureI :: Figure
 figureI = Figure [(-3,-1), (-1,-1), (1,-1), (3,-1)] cyan
+figureJ :: Figure 
 figureJ = Figure [(-1, -1), (1, -1), (3,-1), (-1, 1)] blue
+figureL :: Figure
 figureL = Figure [(-3,-1),(-1, -1), (1, -1), (1, 1)] orange
+figureO :: Figure
 figureO = Figure [(-1, -1), (1, -1), (-1, 1), (1, 1)] yellow
+figureS :: Figure
 figureS = Figure [(-1, -1), (1, -1), (1, 1), (3,1)] green
+figureT :: Figure
 figureT = Figure [(-1, -1), (1, -1), (3,-1), (1, 1)] red
+figureZ :: Figure
 figureZ = Figure [(-1, -1), (1, -1), (-3,1), (-1, 1)] magenta
 
 -- Chooses one of the figures by their number
@@ -33,6 +39,7 @@ randomFigure x = case x of
   4 -> figureS
   5 -> figureT
   6 -> figureZ
+  _ -> figureO
 
 -- Position of the figure
 type FigurePos = (Int, Int)
@@ -167,7 +174,7 @@ drawApp state = pictures [walls, field, currentFigure, drawScore]
 
 -- Function to draw a well, which consists of cells 
 drawWell :: Well -> Picture
-drawWell well = pictures (map pictureCell (cellPos well))
+drawWell w = pictures (map pictureCell (cellPos w))
   where 
     pictureCell (x,y,c) | y > (-3) = pictures []
                         | c == Empty = pictures []
@@ -175,7 +182,7 @@ drawWell well = pictures (map pictureCell (cellPos well))
 
 -- Returns list of coordinates of the cells
 cellPos :: Well -> [(Int, Int, Cell)]
-cellPos well = concat (map takeCells (numberedRows well))
+cellPos w = concat (map takeCells (numberedRows w))
   where 
     takeCells (y, cs) = map extractCell (numberedCells cs)
       where 
@@ -200,14 +207,14 @@ transformCoords (x,y) = (tx,ty)
 -- It's not drawing exactly, fuction just changes color of the cells in the well if a figure is in position
 -- drawWell later will draw all cells in the right color 
 drawFigure :: Figure -> (Int,Int) -> Well -> Well
-drawFigure figure (x, y) well 
+drawFigure fig (x, y) w
   | (odd x) || (odd y) = error "Incorrect: piece coordinates must be even"  
-  | otherwise = Well (map drawRow (numberedRows well))
+  | otherwise = Well (map drawRow (numberedRows w))
     where
       drawRow (py, row) = Row (map drawcell (numberedCells row))
         where drawcell (px, c) 
                              | c /= Empty = c
-                             | figureContain (px - x, py - y) figure = FilledWith (figureColor figure)
+                             | figureContain (px - x, py - y) fig = FilledWith (figureColor fig)
                              | otherwise = Empty
 
 
@@ -220,11 +227,11 @@ handlerEvent :: Event -> AppState -> AppState
 handlerEvent (EventKey (Char 'p') Down _ _) state = state {isPause = not $ isPause state}
 
 handlerEvent (EventKey (SpecialKey KeyLeft) Down _ _) state = case isPause state of 
-                                                                False -> moveFigureLeft state
+                                                                False -> moveFigure state (-2)
                                                                 True -> state
 
 handlerEvent (EventKey (SpecialKey KeyRight) Down _ _) state = case isPause state of 
-                                                                False -> moveFigureRight state 
+                                                                False -> moveFigure state 2
                                                                 True -> state
 
 handlerEvent (EventKey (SpecialKey KeyUp) Down _ _) state = case isPause state of 
@@ -241,19 +248,13 @@ handlerEvent _ state = state
 -- Functions to move falling figures 
 -----------------------
 
--- Move figure right if possible
-moveFigureLeft :: AppState -> AppState
-moveFigureLeft state 
+-- Move figure right or left if possible
+moveFigure :: AppState -> Int -> AppState
+moveFigure state x
   | canPlaceFigure (figure state) pos (well state) = state {figurePos = pos}
   | otherwise = state
-    where pos = (fst (figurePos state) - 2, snd (figurePos state))
+    where pos = (fst (figurePos state) + x, snd (figurePos state))
 
--- Move figure left if possible
-moveFigureRight :: AppState -> AppState
-moveFigureRight state 
-  | canPlaceFigure (figure state) pos (well state) = state {figurePos = pos}
-  | otherwise = state
-    where pos = (fst (figurePos state) + 2, snd (figurePos state))
 
 -- Fuction to organize rotating of the falling figure
 rotateFigure :: AppState -> AppState
@@ -264,15 +265,15 @@ rotateFigure state
 -- Just changes coordinates of the figure
 -- It will rotate her
 rotatedFigure :: Figure -> Figure   
-rotatedFigure (Figure cs col) = Figure (map rotate cs) col
-  where rotate (x,y) = (y, -x)
+rotatedFigure (Figure cs col) = Figure (map rot cs) col
+  where rot (x,y) = (y, -x)
 
 -- Check if it is possible to place figure at the coords
 canPlaceFigure :: Figure -> (Int, Int) -> Well -> Bool
-canPlaceFigure figure coord well = isInField && (not collision)
+canPlaceFigure fig coord w = isInField && (not collision)
   where
-    isInField = okPos coord figure
-    collision = figureCollision figure coord well
+    isInField = okPos coord fig
+    collision = figureCollision fig coord w
    
 -- Check if position is valid 
 okPos :: (Int, Int) -> Figure -> Bool
@@ -281,9 +282,9 @@ okPos (x, y) (Figure cs _) = and (map okCoord cs)
 
 -- Check if figure collides with other figures
 figureCollision :: Figure -> (Int, Int) -> Well -> Bool 
-figureCollision figure figurePos well = wellCollide draw well
+figureCollision fig figpos w = wellCollide draw w
   where 
-    draw = drawFigure figure figurePos emptyWell
+    draw = drawFigure fig figpos emptyWell
     wellCollide (Well w1) (Well w2) = or (map rowCollide (zip w1 w2))
     rowCollide ((Row r1), (Row r2)) = or (map cellCollide (zip r1 r2))
     cellCollide (a,b) = (a /= Empty) && (b /= Empty)
