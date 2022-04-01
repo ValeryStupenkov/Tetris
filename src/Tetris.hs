@@ -5,6 +5,7 @@ import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 
 
+
 ---------------------
 -- Data types
 ---------------------
@@ -74,6 +75,7 @@ data AppState = AppState
   , figure :: Figure
   , figurePos :: FigurePos
   , score :: Int
+  , maxScore :: Int
   , pressedDown :: Bool
   , isPause :: Bool
   , gameOver :: Bool
@@ -90,6 +92,7 @@ defaultAppState = AppState
   , figure = figureO
   , figurePos = (0, 0)
   , score = 0
+  , maxScore = 0
   , pressedDown = False
   , isPause = False
   , gameOver = False
@@ -98,7 +101,7 @@ defaultAppState = AppState
 
 -- Reset state to default and generate new random value
 resetState :: AppState -> AppState
-resetState state = defaultAppState {randomGen = randomGen state}
+resetState state = defaultAppState {randomGen = randomGen state, maxScore = maxScore state}
 
 -----------------------
 -- Functions for drawing a game
@@ -162,15 +165,23 @@ figureContain c (Figure x _) = elem c x
 -- Finally, draw functions themselves
 -- Drawing fuction for play 
 drawApp :: AppState -> Picture
-drawApp state = pictures [walls, field, currentFigure, drawScore]
+drawApp state = pictures [walls, field, currentFigure, drawScore, gameover, maxscore, pressSpace]
   where 
     walls = color wallColor (rectangleSolid (fromIntegral wallWidth) (fromIntegral wallHeight))
     field = pictures [ color wellColor (rectangleSolid (fromIntegral wellWidth) (fromIntegral wellHeight)), drawWell (well state)]
     currentFigure = drawWell (drawFigure (figure state) (figurePos state) emptyWell)
-    drawScore = translate (-600.0) (200.0) (scale 0.4 0.4 (pictures [playerScore]))
-      where 
-        playerScore = color white (Text scoretext)
-        scoretext = "Score: " ++ (show (score state))
+    drawScore = translate (-600.0) (100.0) (scale 0.4 0.4 (pictures [playerScore]))
+    gameover = if (gameOver state) then translate (-600.0) (200.0) (scale 0.4 0.4 (pictures [drawFinal])) else Blank
+    pressSpace = if (gameOver state) then translate (-600.0) (-50.0) (scale 0.2 0.2 (pictures [space])) else Blank
+    maxscore = translate (-600.0) (50.0) (scale 0.4 0.4 (pictures [maxtext]))
+    playerScore = color white (Text scoretext)
+    scoretext = "Score: " ++ (show (score state))
+    drawFinal = color red (Text finaltext)
+    finaltext = "Game Over"
+    maxtext = color blue (Text mtext)
+    mtext = "Max score: " ++ (show (maxScore state))
+    space = color white (Text spacetext)
+    spacetext = "Press SPACE to restart"
 
 -- Function to draw a well, which consists of cells 
 drawWell :: Well -> Picture
@@ -242,6 +253,8 @@ handlerEvent (EventKey (SpecialKey KeyDown) Down _ _) state = state {pressedDown
 
 handlerEvent (EventKey (SpecialKey KeyDown) Up _ _) state = state {pressedDown = False}
 
+handlerEvent (EventKey (SpecialKey KeySpace) Down _ _) state = resetState state
+
 handlerEvent _ state = state 
 
 -----------------------
@@ -300,7 +313,7 @@ moveFigureDown state
 -- Fix falled figure and change it to the new one
 changeFig :: AppState -> AppState
 changeFig state 
-  | (snd (figurePos state)) > (-2) = resetState state
+  | (snd (figurePos state)) > (-2) = state {gameOver = True, isPause = True, maxScore = (score state)}
   | otherwise = state {
                         well = drawFigure (figure state) (figurePos state) (well state)
                       , figure = randomFigure (fst (reGen state))
