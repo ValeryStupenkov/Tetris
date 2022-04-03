@@ -5,7 +5,6 @@ import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 
 
-
 ---------------------
 -- Data types
 ---------------------
